@@ -22,10 +22,6 @@ var (
 	maxrequests = 128
 	// Version given by git tag via Makefile
 	Version string
-	// Puts your privates networks at the end of this regexg
-	// this allow a tag "local" to be printed for ip exclusion
-	// Privates  = regexp.MustCompile(`^(10|172\.(1[6789]|2[0-9]|3[01])|192\.168|193.51\.(2[456789]|3[0-9]|4[12]))\.`)
-	FullPrint bool
 )
 
 // printVersionUsage only print Version and Usage anq exit
@@ -62,7 +58,6 @@ func main() {
 
 // initGeo Convert Asset to Geoip2.Reader
 func initGeo(Asset []byte) *geoip2.Reader {
-
 	db, err := geoip2.FromBytes(Asset)
 	if err != nil {
 		log.Fatal(err)
