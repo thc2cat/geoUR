@@ -1,5 +1,7 @@
 package main
 
+// geoUR : read ips from stdin, display for Country and ASN
+
 import (
 	"bufio"
 	"fmt"
@@ -13,8 +15,9 @@ import (
 )
 
 // History :
-// v1.0 combine geocli and geoASN, doesn't resolve ip anymore
+// v1.0 combine geoip2 Country and ASN,
 //
+// it doesn't resolve ip anymore
 //	use "| adnsresfilter -ua" if resolution is needed
 //
 
@@ -26,7 +29,7 @@ var (
 
 // printVersionUsage only print Version and Usage anq exit
 func printVersionUsage() {
-	fmt.Printf("=== %s %s embedded geoip2 databases\n\t- %s\n\t- %s\n\n",
+	fmt.Printf("%s %s embedded geoip2 databases versions\n\t- %s\n\t- %s\n\n",
 		os.Args[0], Version, AssetCountryName, AssetASNname)
 	fmt.Printf("Usage: %s ip or stdin input\n", os.Args[0])
 	os.Exit(0)
@@ -34,8 +37,8 @@ func printVersionUsage() {
 func main() {
 
 	// embedded values are build from dynembedded.go
-	ASN := initGeo(embeddedASN)
-	Country := initGeo(embeddedCountry)
+	ASN := newgeoip2Reader(embeddedASN)
+	Country := newgeoip2Reader(embeddedCountry)
 
 	switch {
 	case len(os.Args) == 1:
@@ -56,37 +59,36 @@ func main() {
 	os.Exit(0)
 }
 
-// initGeo Convert Asset to Geoip2.Reader
-func initGeo(Asset []byte) *geoip2.Reader {
+// newgeoip2Reader wrapper from []byte to *geoip2.Reader
+func newgeoip2Reader(Asset []byte) *geoip2.Reader {
 	db, err := geoip2.FromBytes(Asset)
 	if err != nil {
+		log.Printf("ERR geoip2.FromBytes()")
 		log.Fatal(err)
 	}
 	return db
 }
 
-// parseandprint return string with ASN and Country
+// parseandprint return string with ASN and Country from ip string
 func parseandprint(ips string, dbCountry, dbASN *geoip2.Reader) string {
-	var record *geoip2.Country
-
 	ip := net.ParseIP(ips)
 	if ip == nil {
-		log.Printf("Unable to parse ip : \"%s\"", ips)
+		log.Printf("ERR net.ParseIP(%s)", ips)
 		return ""
 	}
 
-	var err error
-
-	record, err = dbCountry.Country(ip)
+	record, err := dbCountry.Country(ip)
 	if err != nil || record.Country.Names["en"] == "" {
-		log.Printf("Unable to geoloc Country of \"%s\"", ips)
+		log.Printf("ERR dbCountry.Country(\"%s\")", ips)
 		return ""
 	}
 
 	ASN, err := dbASN.ASN(ip)
 	if err != nil {
-		log.Printf("ERR db.ASN \"%s\"", ips)
+		log.Printf("ERR dbASN.ASN(%s)", ips)
+		return ""
 	}
+
 	output := fmt.Sprintf("%s (%s / AS%d %s)", ips,
 		record.Country.Names["en"],
 		ASN.AutonomousSystemNumber, ASN.AutonomousSystemOrganization)
@@ -95,8 +97,8 @@ func parseandprint(ips string, dbCountry, dbASN *geoip2.Reader) string {
 }
 
 // readandprintbulk read stdin and printout results
-// channel is used when parseandprint use ip to name resolution
-// in that way, we can use
+// channel was used when parseandprint resolved ip to name
+// wg was used to limit concurrent requests
 func readandprintbulk(dbCountry, dbASN *geoip2.Reader) {
 	var line string
 	var wg sync.WaitGroup
@@ -114,8 +116,8 @@ func readandprintbulk(dbCountry, dbASN *geoip2.Reader) {
 		wg.Add(1)
 		limitChan <- true // will block after maxrequests
 
-		go func(line string, mywg *sync.WaitGroup, mychan chan bool) {
-			out := parseandprint(line, dbCountry, dbASN)
+		go func(myline string, mywg *sync.WaitGroup, mychan chan bool) {
+			out := parseandprint(myline, dbCountry, dbASN)
 			if len(out) > 0 {
 				fmt.Printf("%s\n", out)
 			}
