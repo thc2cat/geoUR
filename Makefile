@@ -2,8 +2,11 @@
 NAME= $(notdir $(shell pwd))
 TAG=$(shell git tag)
 
+update: 
+	@sh init.sh
+
 init.go:
-	sh get_extract_give_name.sh
+	@sh init.sh
 
 
 build: | init.go

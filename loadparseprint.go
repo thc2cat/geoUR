@@ -29,24 +29,57 @@ func newgeoip2Reader(Asset []byte) *geoip2.Reader {
 
 // parseandprint return string with ASN and Country from ip string
 func parseandprint(ips string) string {
+	const format = "%s (%s / AS%d %s)"
+	return parseandprintgen(ips, format)
+}
+
+// parseandprint return string with ASN and Country from ip string for SED format
+func parseandprintSED(ips string) string {
+	const format = "s/\"%s\"/\"%s AS%d %s\"/g"
+	return parseandprintgen(ips, format)
+}
+
+// parseandprint return string with ASN and Country from ip string for JSON format
+func parseandprintJSON(ips string) string {
+	// const format = "{\"ip\":\"%s\",\"country\":\"%s\",\"AS\":\"AS%d %s\"}"
+	const format = "{ \"ip\":\"%s\", \"geoip\": { \"country\":\"%s\",\"AS\":\"AS%d %s\"} }"
+
+	// better ?
+	// { ip: "91.67.155.106" ,
+	//  	"geoip": {	"country":"Germany",
+	// 			"AS":"AS3209 Vodafone GmbH", },
+	// }
+
+	// {"user":"aurelie.goyenvalle@uvsq.fr","ip":"176.134.198.13"}
+
+	return parseandprintgen(ips, format)
+}
+
+// Generic parseandprint with format as argument
+func parseandprintgen(ips, format string) string {
+
 	ip := net.ParseIP(ips)
 	if ip == nil {
-		return fmt.Sprintf("%s (ERR net.ParseIP / AS0ERR)", ips)
+		return fmt.Sprintf(format,
+			ips, "ERROR", 0, "Error net.parseIP")
 	}
 
 	record, err := dbCountry.Country(ip)
 	if err != nil || record.Country.Names["en"] == "" {
-		return fmt.Sprintf("%s (ERR geoip2.Country / AS0ERR)", ips)
+		return fmt.Sprintf(format,
+			ips, "ERROR", 0, "Error db.Country")
 	}
 
 	ASN, err := dbASN.ASN(ip)
 	if err != nil {
-		return fmt.Sprintf("%s (ERR geoip2.ASN / AS0ERR)", ips)
+		return fmt.Sprintf(format,
+			ips, "ERROR", 0, "Error db.ASN")
 	}
 
-	return fmt.Sprintf("%s (%s / AS%d %s)", ips,
-		record.Country.Names["en"],
+	return fmt.Sprintf(format,
+		ips, record.Country.Names["en"],
 		ASN.AutonomousSystemNumber, ASN.AutonomousSystemOrganization)
+
 }
 
 // Trying ot pass a generic ParsePrint function to readandprintbulk
