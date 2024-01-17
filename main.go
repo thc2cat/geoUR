@@ -11,6 +11,7 @@ import (
 // v1.0 combine geoip2 Country and ASN,
 // v1.2 testing functions as parameter
 // v1.3 Better json output
+// v1.4 correcting for & ' and \ caracters
 //
 // it doesn't resolve ip anymore
 //	use "| adnsresfilter -ua" if resolution is needed
@@ -19,7 +20,7 @@ import (
 var (
 	maxrequests = 128
 	// Version given by git tag via Makefile
-	Version = "v1.3"
+	Version = "v1.4"
 )
 
 // printVersionUsage only print Version and Usage anq exit

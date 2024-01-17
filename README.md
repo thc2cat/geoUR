@@ -6,7 +6,7 @@ geoUR use maxmind geoip databases, embed Country and ASN data in a portable bina
 
 A free Maxmind license_key file must be present in current directory, containing 'licence_key=xxxxx' in order to download Maxmind mmdb databases via init.sh script, wich will be embeded in cli binary.
 
-ip resolution to geoip info is done via Maxmind geoip available at [oschwald/geoip2-golang lib]("https://github.com/oschwald/geoip2-golang").
+ip to geoip info is done via Maxmind geoip available at [oschwald/geoip2-golang lib]("https://github.com/oschwald/geoip2-golang").
 
 ## Build (need golang installed)
 
@@ -22,18 +22,18 @@ Your can also manually download these db from maxmind and adapt init.tpl manuall
 ## Usage
 
 ```shell
-~ $ geoUR -h
-geoUR (v1.2) build with MaxMind free edition db :
-        - GeoLite2-Country_20240109
-        - GeoLite2-ASN_20240109
+> go run . -h
+geoUR (v1.4) build with MaxMind free edition db :
+        - GeoLite2-Country_20240116
+        - GeoLite2-ASN_20240116
 
 Usage: geoUR ip or stdin input
-use BULKFORMAT env for JSON, SED format      
+use BULKFORMAT env for JSON, SED format
 
 > geoUR 217.69.139.150
 217.69.139.150 (Russia / AS47764 LLC VK)
 
-ip addresses must be extracted  ( checkout my extractip cli repo ) , as exemple :
+ip addresses must be extracted ( checkout my extractip repo ) , as exemple :
 
 ```shell
 > rg "pattern" logs/* | extractip | geoUR | rg "Russia|Ivory"
@@ -51,10 +51,10 @@ ip addresses must be extracted  ( checkout my extractip cli repo ) , as exemple 
 { "ip":"176.134.198.13", "geoip": { "country":"France","AS":"AS5410 Bouygues Telecom SA"} }
 ```
 
-With this json output, you can edit/remove data before slurping with `jq -s '.'` to remove caracters such as quotes, \& , and \\.
+ geoUR remove caracters such as quotes, \& , and \\. in AS to avoid issues when slurping with `jq -s '.'`.
 
 ```shell
-> extractip < userip |  geoUR | sed -e "s/&/and/g" -e "s/\'/ /g" | tr -d '\\' 2>/dev/null | jq -s '.' >  usergeo.s
+> extractip < userip |geoUR|jq -s '.' >  usergeo.s
 ```
 
 ## JSON merging, filtering, searching  with jq examples

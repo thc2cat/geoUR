@@ -76,9 +76,15 @@ func parseandprintgen(ips, format string) string {
 			ips, "ERROR", 0, "Error db.ASN")
 	}
 
+	// special caracters are problematic for JSON output
+	change := strings.NewReplacer("&", " and ",
+		"'", " ",
+		"\\", " ")
+	properASN := change.Replace(ASN.AutonomousSystemOrganization)
+
 	return fmt.Sprintf(format,
 		ips, record.Country.Names["en"],
-		ASN.AutonomousSystemNumber, ASN.AutonomousSystemOrganization)
+		ASN.AutonomousSystemNumber, properASN)
 
 }
 
@@ -86,7 +92,7 @@ func parseandprintgen(ips, format string) string {
 type FuncStringtoString func(string) string
 
 // readandprintbulk read stdin and printout results
-// channel was used when parseandprint resolved ip to name
+// channel was used when old parseandprint resolved ip to name
 // wg was used to limit concurrent requests
 func readandprintbulk(doit FuncStringtoString) {
 	var line string
