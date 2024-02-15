@@ -32,6 +32,7 @@ use BULKFORMAT env for JSON, SED format
 
 > geoUR 217.69.139.150
 217.69.139.150 (Russia / AS47764 LLC VK)
+```
 
 ip addresses must be extracted ( checkout my extractip repo ) , as exemple :
 
